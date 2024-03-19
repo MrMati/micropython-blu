@@ -140,6 +140,7 @@ set(MICROPY_SOURCE_PORT
     msc_disk.c
     mbedtls/mbedtls_port.c
     ${CMAKE_BINARY_DIR}/pins_${MICROPY_BOARD}.c
+    modcore1.c
 )
 
 set(MICROPY_SOURCE_QSTR
@@ -162,6 +163,7 @@ set(MICROPY_SOURCE_QSTR
     ${MICROPY_PORT_DIR}/rp2_pio.c
     ${MICROPY_PORT_DIR}/rp2_dma.c
     ${CMAKE_BINARY_DIR}/pins_${MICROPY_BOARD}.c
+    ${MICROPY_PORT_DIR}/modcore1.c
 )
 
 set(PICO_SDK_COMPONENTS
@@ -503,6 +505,7 @@ if (PICO_ON_DEVICE AND NOT PICO_NO_FLASH AND NOT PICO_COPY_TO_RAM)
 endif()
 
 pico_add_extra_outputs(${MICROPY_TARGET})
+string(APPEND CMAKE_EXE_LINKER_FLAGS "-Wl,--print-memory-usage")
 
 pico_find_compiler(PICO_COMPILER_SIZE ${PICO_GCC_TRIPLE}-size)
 
