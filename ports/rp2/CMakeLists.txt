@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.13)
+set(CMAKE_CXX_STANDARD 17)
 
 # Set build type to reduce firmware size
 if(NOT CMAKE_BUILD_TYPE)
@@ -20,6 +21,8 @@ set(PICO_TINYUSB_PATH ${MICROPY_DIR}/lib/tinyusb)
 set(PICO_LWIP_PATH ${MICROPY_DIR}/lib/lwip)
 # Use the local btstack instead of the one in pico-sdk
 set(PICO_BTSTACK_PATH ${MICROPY_DIR}/lib/btstack)
+
+set(TFT_ESPI_DIR ${MICROPY_DIR}/lib/TFT_eSPI)
 
 # Set the location of this port's directory.
 set(MICROPY_PORT_DIR ${CMAKE_CURRENT_LIST_DIR})
@@ -140,7 +143,8 @@ set(MICROPY_SOURCE_PORT
     msc_disk.c
     mbedtls/mbedtls_port.c
     ${CMAKE_BINARY_DIR}/pins_${MICROPY_BOARD}.c
-    modcore1.c
+    modcore1_interface.c
+    modcore1.cpp
 )
 
 set(MICROPY_SOURCE_QSTR
@@ -163,7 +167,8 @@ set(MICROPY_SOURCE_QSTR
     ${MICROPY_PORT_DIR}/rp2_pio.c
     ${MICROPY_PORT_DIR}/rp2_dma.c
     ${CMAKE_BINARY_DIR}/pins_${MICROPY_BOARD}.c
-    ${MICROPY_PORT_DIR}/modcore1.c
+    ${MICROPY_PORT_DIR}/modcore1_interface.c
+    ${MICROPY_PORT_DIR}/modcore1.cpp
 )
 
 set(PICO_SDK_COMPONENTS
@@ -408,6 +413,14 @@ if (MICROPY_PY_NETWORK_WIZNET5K)
         ${MICROPY_DIR}/lib/wiznet5k/Internet/DNS/dns.c
         ${MICROPY_DIR}/lib/wiznet5k/Internet/DHCP/dhcp.c
     )
+endif()
+
+if (MICROPY_PY_TFT_ESPI)
+	add_subdirectory(${TFT_ESPI_DIR} ${CMAKE_BINARY_DIR}/TFT_eSPI)
+	
+	target_include_directories(${MICROPY_TARGET} PRIVATE ${TFT_ESPI_DIR})
+	target_link_libraries(${MICROPY_TARGET} TFT_eSPI)
+	target_compile_definitions(${MICROPY_TARGET} PUBLIC -DARDUINO_ARCH_RP2040)
 endif()
 
 # Add qstr sources for extmod and usermod, in case they are modified by components above.

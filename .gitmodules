@@ -65,3 +65,6 @@
 [submodule "lib/libmetal"]
 	path = lib/libmetal
 	url = https://github.com/OpenAMP/libmetal.git
+[submodule "lib/TFT_eSPI"]
+	path = lib/TFT_eSPI
+	url = https://github.com/MrMati/TFT_eSPI-pico
