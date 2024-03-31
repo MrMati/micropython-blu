@@ -19,22 +19,23 @@ void core1_main() {
     tft.fillScreen(TFT_BLACK);
 
     long previousMillis = 0;
-    long currentFramerate = 0;
+    long currentFrame = 0;
     uint16_t seconds = 0;
     uint16_t fps = 0;
     int shapeColor = 0xff;
     int lastShapeColor = !shapeColor;
     uint8_t dir = 1;
     tft.setTextSize(1);
-    
+
     
     while (1) {
         unsigned long currentMillis = to_ms_since_boot(get_absolute_time());
 
         if (currentMillis - previousMillis >= 1000) // every second
         {
-          fps = currentFramerate;// - lastFramerate;
-          currentFramerate = 0;
+          fps = currentFrame /
+           ((currentMillis - previousMillis)/1000.0);// - lastFramerate;
+          currentFrame = 0;
           previousMillis = currentMillis;
           seconds++;
         }
@@ -44,12 +45,13 @@ void core1_main() {
           if (shapeColor == 0)
             dir = -dir;
         }
-        currentFramerate++;
+        currentFrame++;
         
         cmd_t cmd;
         if(queue_try_remove(&cmd_fifo, &cmd)) {
             shapeColor = cmd.color % 0x100;
         }
+        tft.startWrite();
 
         tft.setCursor(5, 2, 1);
         tft.print("Secs :");
@@ -72,6 +74,7 @@ void core1_main() {
           // tft.drawPixel(0, 0, TFT_RED);
           // tft.fillScreen(TFT_BLACK);
         }
+        tft.endWrite();
     }
 }
 
