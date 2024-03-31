@@ -7,7 +7,6 @@ extern "C" {
 int launch_interface();
 int set_color_interface(int);
 
-
 #ifdef __cplusplus
 } // extern "C"
 #endif
