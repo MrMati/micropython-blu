@@ -4,74 +4,68 @@
 #include "pico/stdlib.h"
 #include "pico/util/queue.h"
 
+#include "blu_ui.h"
+
 TFT_eSPI tft = TFT_eSPI();
+
+enum CMDSel {
+  COLOR,
+  SLOT,
+  VIEW,
+  SENSOR
+};
 
 queue_t cmd_fifo;
 typedef struct cmd {
-  int color;
+  CMDSel sel;
+  uint32_t color;
+  uint8_t slotSelect;
+  uint8_t view; // 0 - SPLASH, 1 - MAIN
+  SensorType::Value sensorStatus;
 } cmd_t;
 const int FIFO_LENGTH = 32;
 
+MainView mainView(tft);
+SplashView splashView(tft);
+
 void core1_main() {
+  unsigned long startMillis = to_ms_since_boot(get_absolute_time());
   tft.init();
   tft.setRotation(3);
-  tft.fillScreen(TFT_BLACK);
-
-  long previousMillis = 0;
-  long currentFrame = 0;
-  uint16_t seconds = 0;
-  uint16_t fps = 0;
-  int shapeColor = 0xff;
-  int lastShapeColor = !shapeColor;
-  uint8_t dir = 1;
   tft.setTextSize(1);
 
-  while (1) {
-    unsigned long currentMillis = to_ms_since_boot(get_absolute_time());
+  tft.fillScreen(TFT_BLACK);
 
-    if (currentMillis - previousMillis >= 1000) // every second
-    {
-      fps = currentFrame /
-            ((currentMillis - previousMillis) / 1000.0); // - lastFramerate;
-      currentFrame = 0;
-      previousMillis = currentMillis;
-      seconds++;
-    }
-    if ((currentMillis - previousMillis) % 200 >= 100) {
-      // shapeColor += dir;
-      // shapeColor %= 0x100;
-      if (shapeColor == 0)
-        dir = -dir;
-    }
-    currentFrame++;
+  View *currentView = &splashView;
+
+
+  currentView->firstRender();
+
+  while (1) {
+    unsigned long currentMillis = to_ms_since_boot(get_absolute_time()) - startMillis;
 
     cmd_t cmd;
     if (queue_try_remove(&cmd_fifo, &cmd)) {
-      shapeColor = cmd.color % 0x100;
+      switch(cmd.sel) {
+        case VIEW:
+          if(cmd.view == 0) currentView = &splashView;
+          if(cmd.view == 1) currentView = &mainView;
+          currentView->firstRender();
+          break;
+        case COLOR:
+          mainView.sensorMeter.state.color = cmd.color;
+          break;
+        case SLOT:
+          mainView.slotSelect.state.selectedSlot = cmd.slotSelect;
+          break;
+        case SENSOR:
+          mainView.sensorStatus.state.sensor = cmd.sensorStatus;
+          break;
+      }
     }
+
     tft.startWrite();
-
-    tft.setCursor(5, 2, 1);
-    tft.print("Secs :");
-    tft.setCursor(50, 2);
-    tft.print(seconds);
-
-    tft.setCursor(5, 12, 1);
-    tft.print("FPS  :");
-    tft.setCursor(50, 12);
-    tft.print(fps);
-
-    if (lastShapeColor != shapeColor) {
-      lastShapeColor = shapeColor;
-      // print some graphics
-      // tft.drawCircle(0, 0, 10, shapeColor);
-      // tft.drawRect(0, 0, 160, 80, shapeColor);
-      tft.fillRectHGradient(3, 22, 150, 55,
-                            rgb565(0xff - shapeColor, shapeColor, 0),
-                            rgb565(shapeColor, 0xff - shapeColor, 0));
-      // tft.drawPixel(0, 0, TFT_RED);
-      // tft.fillScreen(TFT_BLACK);
-    }
+    currentView->render(currentMillis);
     tft.endWrite();
   }
 }
@@ -93,10 +87,29 @@ int launch_interface() {
   return 0;
 }
 
-int set_color_interface(int color) {
+int set_color_interface(uint32_t color) {
   if (!launched)
     return 2;
-  cmd_t cmd = {.color = color};
+  cmd_t cmd = {.sel = COLOR, .color = color};
+  return !queue_try_add(&cmd_fifo, &cmd);
+}
+
+int set_slot_interface(uint8_t slot) {
+if (!launched)
+    return 2;
+  cmd_t cmd = {.sel = SLOT, .slotSelect = slot};
+  return !queue_try_add(&cmd_fifo, &cmd);
+}
+int set_view_interface(uint8_t view) {
+    if (!launched)
+    return 2;
+  cmd_t cmd = {.sel = VIEW, .view = view};
+  return !queue_try_add(&cmd_fifo, &cmd);
+}
+int set_sensor_status_interface(uint8_t status) {
+  if (!launched)
+    return 2;
+  cmd_t cmd = {.sel = SENSOR, .sensorStatus = SensorType::Value(status)};
   return !queue_try_add(&cmd_fifo, &cmd);
 }
 

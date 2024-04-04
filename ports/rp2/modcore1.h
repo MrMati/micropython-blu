@@ -1,22 +1,17 @@
 #pragma once
 
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 int launch_interface();
-int set_color_interface(int);
+int set_color_interface(uint32_t);
+int set_slot_interface(uint8_t);
+int set_view_interface(uint8_t);
+int set_sensor_status_interface(uint8_t);
 
 #ifdef __cplusplus
 } // extern "C"
 #endif
-
-int rgb565(unsigned char r, unsigned char g, unsigned char b) {
-  unsigned char red = r >> 3;
-  unsigned char green = g >> 2;
-  unsigned char blue = b >> 3;
-
-  int result = (red << (5 + 6)) | (green << 5) | blue;
-
-  return result;
-}

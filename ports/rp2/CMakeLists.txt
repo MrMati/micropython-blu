@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.13)
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 
 # Set build type to reduce firmware size
 if(NOT CMAKE_BUILD_TYPE)
@@ -23,6 +23,7 @@ set(PICO_LWIP_PATH ${MICROPY_DIR}/lib/lwip)
 set(PICO_BTSTACK_PATH ${MICROPY_DIR}/lib/btstack)
 
 set(TFT_ESPI_DIR ${MICROPY_DIR}/lib/TFT_eSPI)
+set(BLU_UI_DIR ${CMAKE_CURRENT_LIST_DIR}/ui)
 
 # Set the location of this port's directory.
 set(MICROPY_PORT_DIR ${CMAKE_CURRENT_LIST_DIR})
@@ -418,9 +419,12 @@ endif()
 if (MICROPY_PY_TFT_ESPI)
 	add_subdirectory(${TFT_ESPI_DIR} ${CMAKE_BINARY_DIR}/TFT_eSPI)
 	
-	target_include_directories(${MICROPY_TARGET} PRIVATE ${TFT_ESPI_DIR})
+	target_include_directories(${MICROPY_TARGET} PRIVATE ${TFT_ESPI_DIR} ${BLU_UI_DIR})
 	target_link_libraries(${MICROPY_TARGET} TFT_eSPI)
 	target_compile_definitions(${MICROPY_TARGET} PUBLIC -DARDUINO_ARCH_RP2040)
+    list(APPEND MICROPY_SOURCE_PORT
+        ${BLU_UI_DIR}/blu_ui.cpp
+    )
 endif()
 
 # Add qstr sources for extmod and usermod, in case they are modified by components above.
